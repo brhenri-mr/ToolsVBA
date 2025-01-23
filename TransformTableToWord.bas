@@ -1,7 +1,21 @@
 Attribute VB_Name = "Módulo1"
-Sub Export_Table_Word()
-    'Word objects.
+' Created By: Breno Henrique
+' Date: 01/2025
 
+'Objective:
+' Interation between Excel tables and Word. The script allow the use to
+' import the table as imagem That it fix perfect with the avaible space on the word
+
+
+' Problems
+' If the script does not working, may the VBA need to be configuret to that
+' Ferramentas -> Preferências -> MicrosoftWordTools-> Check
+
+' Backups can be founded at: https://github.com/brhenri-mr/ToolsVBA
+
+Sub Export_Table_Word()
+
+    'Word objects.
     Dim wdbmRange As Word.Range
     Dim wdDoc As Word.Document
     Dim stWordReport As String
@@ -11,33 +25,35 @@ Sub Export_Table_Word()
     Dim wsSheet As Worksheet
     Dim rnReport As Range
     Dim piece As Range
+    
     Dim firstRow As Long
     Dim maxRow As Integer
     Dim deltaP As Integer ' Posição variavel
 
-      
     'Initialize the Excel objects.
     Set wbBook = ThisWorkbook
     Set wsSheet = wbBook.Worksheets("Cálculos NBR9062 2017")
     Set rnReport = wsSheet.Range("AparelhoApoioNBR")
-    firstRow = rnReport.row
-    deltaP = firstRow
-    
-    maxRow = rnReport.Rows(1).row + rnReport.Rows.Count - 1
-    
 
     
     'User Pattern
     Dim mark As String
     Dim choose As String
     Dim Path As String
-    
-    
     Dim rowSlice As Integer
+    Dim versao As Integer
+    Dim userName As String
     
     mark = Cells(23, 14).Value ' Name of the Bookmark on the word
     choose = Cells(24, 14).Value ' Basic a Boolean var to choose the document
     stWordReport = Cells(25, 14).Value 'Name of the existing Word doc.
+    versao = Cells(26, 14).Value ' Sheets version
+    userName = Cells(22, 14).Value
+    firstRow = rnReport.row
+    deltaP = firstRow
+    
+    maxRow = rnReport.Rows(1).row + rnReport.Rows.Count - 1
+    
 
     ' Init Document's instance
     Set wdDoc = getWordDocument(choose, stWordReport, mark)
@@ -76,6 +92,9 @@ Sub Export_Table_Word()
                               DisplayAsIcon:=False
             End With
             
+            ' Insert Metadate on the img
+            Call signIgm(wdDoc, versao, userName)
+            
             ' Atualizando o loop
             Call MoveCursor(wdbmRange)
             wdDoc.Bookmarks.Add Name:=mark, Range:=wdbmRange
@@ -84,60 +103,11 @@ Sub Export_Table_Word()
         Wend
 '--------------------------------------------------------------------------------------------
         wdDoc.Bookmarks(mark).Delete
-        
-        'Save and close the Word doc.
-        
-        If choose = "Não" Then
-            With wdDoc
-                .Save
-                .Close
-            End With
-        
-        Else
-            With wdDoc
-                .Save
-            End With
-        End If
-        
-        'Quit Word.
-        If choose = "Não" Then
-            wdApp.Quit
-        End If
-        
-        'Null out your variables.
-        Set wdbmRange = Nothing
-        Set wdDoc = Nothing
-        Set wdApp = Nothing
-        
-        'Clear out the clipboard, and turn screen updating back on.
-        With Application
-            .CutCopyMode = False
-            .ScreenUpdating = True
-        End With
-        
-        MsgBox "Transferência realizado com sucesso " & vbNewLine & _
-               "para " & stWordReport, vbInformation
+        Call finalizeWordDocument(choose, wdDoc, wdbmRange)
+
     Else
         MsgBox "Marcador não encontrado. Tem certeza que cadastrou um?"
     End If
-
-    
-    'Quit Word.
-    If chosse = "Não" Then
-        wdApp.Quit
-        
-        'Null out your variables.
-        Set wdbmRange = Nothing
-        Set wdDoc = Nothing
-        Set wdApp = Nothing
-        
-        'Clear out the clipboard, and turn screen updating back on.
-        With Application
-            .CutCopyMode = False
-            .ScreenUpdating = True
-        End With
-    End If
-
 
 End Sub
 
@@ -190,6 +160,8 @@ With wdbmRange
 
 End Sub
 
+
+
 Function getWordDocument(choose As String, stWordReport As String, mark As String) As Object
     'Rotina para pegar o documento Word
     Dim wdApp As Word.Application
@@ -199,7 +171,7 @@ Function getWordDocument(choose As String, stWordReport As String, mark As Strin
     'Initialize the Word objects.
     If choose = "Sim" Then
         Set wdApp = GetObject(, "Word.Application")
-        Set wdDoc = Word.Application.ActiveDocument
+        Set wdDoc = wdApp.ActiveDocument
         
         With wdApp.Selection
             wdDoc.Bookmarks.Add Name:=mark, Range:=.Range
@@ -219,3 +191,57 @@ Function getWordDocument(choose As String, stWordReport As String, mark As Strin
     
 End Function
 
+Sub signIgm(ByRef wdDoc As Object, versao As Integer, userName As String)
+    ' Rotina para assinar imagens
+    
+    Dim metadados As String
+    Dim imgRange As Word.Range
+    Dim img As InlineShape
+
+    metadata = "Criado por " & userName & " em " & Format(Date, "dd/mm/yyyy") & "Plan Version:" & versao
+
+    ' Assinando a imagem
+    Set img = wdDoc.InlineShapes(wdDoc.InlineShapes.Count)
+            
+    ' Usar o Range da imagem para adicionar o comentário
+    img.AlternativeText = metadata
+
+
+End Sub
+
+Sub finalizeWordDocument(choose As String, ByRef wdDoc As Object, ByRef wdbmRange As Object)
+' Rotina para finalizar o programa
+        
+        If choose = "Não" Then
+            With wdDoc
+                .Save
+                .Close
+            End With
+        
+        Else
+            With wdDoc
+                .Save
+            End With
+        End If
+        
+        'Quit Word.
+        If choose = "Não" Then
+            wdApp.Quit
+        End If
+        
+        'Null out your variables.
+        Set wdbmRange = Nothing
+        Set wdDoc = Nothing
+        Set wdApp = Nothing
+        
+        'Clear out the clipboard, and turn screen updating back on.
+        With Application
+            .CutCopyMode = False
+            .ScreenUpdating = True
+        End With
+        
+        MsgBox "Transferência realizado com sucesso " & vbNewLine & _
+               "para " & stWordReport, vbInformation
+
+
+End Sub

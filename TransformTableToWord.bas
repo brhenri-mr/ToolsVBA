@@ -14,7 +14,9 @@ Attribute VB_Name = "Módulo1"
 ' Backups can be founded at: https://github.com/brhenri-mr/ToolsVBA
 
 Sub Export_Table_Word()
-
+    
+    Dim planName As String
+    
     'Word objects.
     Dim wdbmRange As Word.Range
     Dim wdDoc As Word.Document
@@ -32,8 +34,9 @@ Sub Export_Table_Word()
 
     'Initialize the Excel objects.
     Set wbBook = ThisWorkbook
-    Set wsSheet = wbBook.Worksheets("Cálculos NBR9062 2017")
-    Set rnReport = wsSheet.Range("AparelhoApoioNBR")
+    Set wsSheet = wbBook.ActiveSheet
+    planName = Cells(27, 14).Value & "CALCULOS"
+    Set rnReport = wsSheet.Range(planName)
 
     
     'User Pattern
@@ -49,6 +52,8 @@ Sub Export_Table_Word()
     stWordReport = Cells(25, 14).Value 'Name of the existing Word doc.
     versao = Cells(26, 14).Value ' Sheets version
     userName = Cells(22, 14).Value
+
+
     firstRow = rnReport.row
     deltaP = firstRow
     
